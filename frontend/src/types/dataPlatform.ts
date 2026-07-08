@@ -5,19 +5,17 @@ export interface DataConnector {
   name: string;
   description: string;
   status: ConnectorStatus;
-  icon?: string;
 }
 
-export type UploadStatus = "completed" | "processing" | "failed" | "queued";
+export type UploadStatus = "COMPLETED" | "PROCESSING" | "FAILED" | "QUEUED";
 
 export interface UploadRecord {
-  id: string;
-  fileName: string;
-  dataset: string;
-  rows: number;
+  id: number;
+  file_name: string;
+  dataset_type: string;
+  row_count: number;
   status: UploadStatus;
-  validationScore: number;
-  uploadedBy: string;
-  startedAt: string;
-  completedAt?: string;
+  validation_score: number;
+  uploaded_by: string;
+  created_at: string;
 }

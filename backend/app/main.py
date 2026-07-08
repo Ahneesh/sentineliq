@@ -5,6 +5,7 @@ from app.api.health import router as health_router
 from app.api.uploads import router as uploads_router
 from app.database.base import Base
 from app.database.session import engine
+from app.models import upload  # noqa: F401 - register SQLAlchemy models
 
 app = FastAPI(
     title="SentinelIQ API",
@@ -22,8 +23,7 @@ app.add_middleware(
 
 
 @app.on_event("startup")
-def initialise_database() -> None:
-    # Development-friendly table creation. Replace with Alembic before production hardening.
+def initialise_database():
     Base.metadata.create_all(bind=engine)
 
 
