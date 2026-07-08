@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: sentineliq-postgres
+    environment:
+      POSTGRES_USER: sentineliq
+      POSTGRES_PASSWORD: sentineliq
+      POSTGRES_DB: sentineliq
+    ports:
+      - "5432:5432"
+    volumes:
+      - sentineliq_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  sentineliq_postgres_data:
