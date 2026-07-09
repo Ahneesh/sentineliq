@@ -5,12 +5,15 @@ from app.api.health import router as health_router
 from app.api.uploads import router as uploads_router
 from app.database.base import Base
 from app.database.session import engine
-from app.models import upload  # noqa: F401 - register SQLAlchemy models
+from app.models.upload import DatasetProfile, Upload  # noqa: F401
+
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="SentinelIQ API",
     description="AI-native trade surveillance platform",
-    version="0.3.1",
+    version="0.3.2",
 )
 
 app.add_middleware(
@@ -20,12 +23,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def initialise_database():
-    Base.metadata.create_all(bind=engine)
-
 
 app.include_router(health_router, prefix="/api")
 app.include_router(uploads_router, prefix="/api")

@@ -1,8 +1,10 @@
 from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel
 
 
-class UploadRead(BaseModel):
+class UploadOut(BaseModel):
     id: int
     file_name: str
     dataset_type: str
@@ -16,6 +18,15 @@ class UploadRead(BaseModel):
         from_attributes = True
 
 
-class UploadSummary(BaseModel):
-    upload: UploadRead
-    message: str
+class DatasetProfileOut(BaseModel):
+    id: int
+    upload_id: int
+    file_name: str
+    row_count: int
+    column_count: int
+    duplicate_rows: int
+    null_percentage: float
+    quality_score: int
+    schema: list[dict[str, Any]]
+    statistics: dict[str, Any]
+    created_at: datetime

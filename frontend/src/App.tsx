@@ -1,11 +1,11 @@
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { auroraTheme } from "./theme/auroraTheme";
+import DataPlatformPage from "./pages/DataPlatformPage";
 import DashboardPage from "./pages/DashboardPage";
 import AlertsPage from "./pages/AlertsPage";
 import InvestigationPage from "./pages/InvestigationPage";
 import CasesPage from "./pages/CasesPage";
-import DataPlatformPage from "./pages/DataPlatformPage";
 import AIAssistantPage from "./pages/AIAssistantPage";
 
 function App() {

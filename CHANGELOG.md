@@ -1,10 +1,11 @@
 # Changelog
 
-## Feature Pack 3.1.2 — Real CSV Upload API + UI Integration
+## Feature Pack 3.2.1 — Enterprise Data Profiling Engine
 
-- Added backend `/api/uploads` list and create endpoints.
-- Added SQLAlchemy `uploads` model.
-- Added local file persistence under `backend/storage/uploads`.
-- Added row-count and basic validation scoring.
-- Connected Data Platform Upload File button to FastAPI.
-- Added upload success/error messages and live recent uploads.
+### Added
+- Polars-based CSV profiling engine.
+- `dataset_profiles` persistence model.
+- `/api/uploads/{upload_id}/profile` endpoint.
+- Dataset profile UI with overview metrics and column explorer.
+- Sample profiling dataset.
+- ADR and PDR documentation.

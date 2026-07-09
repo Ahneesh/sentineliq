@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Box,
@@ -6,18 +6,23 @@ import {
   Card,
   CardContent,
   Chip,
+  Divider,
   Grid,
   LinearProgress,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   Typography,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import CableIcon from "@mui/icons-material/Cable";
 import StorageIcon from "@mui/icons-material/Storage";
 import CloudIcon from "@mui/icons-material/Cloud";
-
-import { fetchUploads, uploadCsv } from "../services/uploadService";
-import type { UploadRecord } from "../types/dataPlatform";
+import { getDatasetProfile, listUploads, uploadCsv } from "../services/dataPlatformApi";
+import type { DatasetProfile, UploadRecord } from "../types/dataPlatform";
 
 const connectors = [
   { name: "CSV Upload", status: "Enabled", icon: <UploadFileIcon /> },
@@ -28,141 +33,91 @@ const connectors = [
   { name: "Database", status: "Coming Soon", icon: <StorageIcon /> },
 ];
 
-const fallbackUploads: UploadRecord[] = [
-  {
-    id: 1,
-    file_name: "orders_sample.csv",
-    dataset_type: "Orders",
-    row_count: 12450,
-    status: "COMPLETED",
-    validation_score: 98,
-    uploaded_by: "Sarah Johnson",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    file_name: "trades_sample.csv",
-    dataset_type: "Trades",
-    row_count: 4812,
-    status: "COMPLETED",
-    validation_score: 97,
-    uploaded_by: "Sarah Johnson",
-    created_at: new Date().toISOString(),
-  },
-];
-
-function formatRows(rows: number): string {
-  return new Intl.NumberFormat("en-GB").format(rows);
-}
-
 export default function DataPlatformPage() {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [uploads, setUploads] = useState<UploadRecord[]>(fallbackUploads);
-  const [isUploading, setIsUploading] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [uploads, setUploads] = useState<UploadRecord[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<DatasetProfile | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const completedUploads = useMemo(
-    () => uploads.filter((upload) => upload.status === "COMPLETED").length,
-    [uploads]
-  );
-
-  async function loadUploads() {
-    try {
-      const apiUploads = await fetchUploads();
-      if (apiUploads.length > 0) {
-        setUploads(apiUploads);
-      }
-    } catch {
-      // Keep mock data visible when backend is not running.
-    }
+  async function refreshUploads() {
+    const data = await listUploads();
+    setUploads(data);
   }
 
   useEffect(() => {
-    loadUploads();
+    refreshUploads().catch(() => setError("Unable to load uploads from API."));
   }, []);
 
-  async function handleFileSelected(event: ChangeEvent<HTMLInputElement>) {
+  async function handleFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-
     setIsUploading(true);
     setError(null);
-    setNotice(null);
-
+    setSuccess(null);
     try {
-      const uploaded = await uploadCsv(file);
-      setUploads((current) => [uploaded, ...current.filter((item) => item.id !== uploaded.id)]);
-      setNotice(`${file.name} uploaded and validated successfully.`);
+      const upload = await uploadCsv(file);
+      setSuccess(`${upload.file_name} uploaded, validated and profiled successfully.`);
+      await refreshUploads();
+      const profile = await getDatasetProfile(upload.id);
+      setSelectedProfile(profile);
     } catch (err) {
-      console.error(err);
-      setError("Upload failed. Check that the backend is running on localhost:8000.");
+      setError("Upload failed. Check that the backend is running and the file is a valid CSV.");
     } finally {
       setIsUploading(false);
       event.target.value = "";
     }
   }
 
+  async function openProfile(uploadId: number) {
+    const profile = await getDatasetProfile(uploadId);
+    setSelectedProfile(profile);
+  }
+
   return (
-    <Box sx={{ p: 4 }}>
-      <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={2}>
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            Data Platform
-          </Typography>
-          <Typography color="text.secondary" sx={{ mb: 3 }}>
-            Connect, validate and catalogue trading data for surveillance.
+    <Box sx={{ p: 4, maxWidth: 1340, mx: "auto" }}>
+      <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems="center" spacing={2}>
+        <Box textAlign={{ xs: "center", md: "left" }}>
+          <Typography variant="h3" fontWeight={800}>Data Platform</Typography>
+          <Typography color="text.secondary" variant="h6">
+            Connect, validate, profile and catalogue trading data for surveillance.
           </Typography>
         </Box>
-
-        <Card sx={{ minWidth: 280 }}>
-          <CardContent>
-            <Typography color="text.secondary" variant="body2">
-              Completed Uploads
-            </Typography>
-            <Typography variant="h4" fontWeight={800}>
-              {completedUploads}
-            </Typography>
+        <Card sx={{ minWidth: 260 }}>
+          <CardContent sx={{ textAlign: "center" }}>
+            <Typography>Completed Uploads</Typography>
+            <Typography variant="h3">{uploads.filter((u) => u.status === "COMPLETED").length}</Typography>
           </CardContent>
         </Card>
       </Stack>
 
-      {notice && <Alert severity="success" sx={{ mb: 2 }}>{notice}</Alert>}
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {isUploading && <LinearProgress sx={{ mb: 2 }} />}
+      {success && <Alert severity="success" sx={{ mt: 3 }}>{success}</Alert>}
+      {error && <Alert severity="error" sx={{ mt: 3 }}>{error}</Alert>}
+      {isUploading && <LinearProgress sx={{ mt: 3 }} />}
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".csv,text/csv"
-        hidden
-        onChange={handleFileSelected}
-      />
+      <input ref={inputRef} type="file" accept=".csv" hidden onChange={handleFileSelected} />
 
-      <Grid container spacing={2}>
-        {connectors.map((connector) => (
-          <Grid item xs={12} sm={6} md={4} key={connector.name}>
+      <Grid container spacing={2} sx={{ mt: 2 }}>
+        {connectors.map((c) => (
+          <Grid item xs={12} sm={6} md={4} lg={2} key={c.name}>
             <Card sx={{ height: "100%" }}>
               <CardContent>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  {connector.icon}
+                  {c.icon}
                   <Box flex={1}>
-                    <Typography fontWeight={700}>{connector.name}</Typography>
-                    <Chip
-                      size="small"
-                      label={connector.status}
-                      color={connector.status === "Enabled" ? "primary" : "default"}
-                    />
+                    <Typography fontWeight={700}>{c.name}</Typography>
+                    <Chip size="small" label={c.status} color={c.status === "Enabled" ? "primary" : "default"} />
                   </Box>
                 </Stack>
                 <Button
                   sx={{ mt: 2 }}
-                  variant={connector.status === "Enabled" ? "contained" : "outlined"}
+                  variant={c.status === "Enabled" ? "contained" : "outlined"}
+                  disabled={c.status !== "Enabled" || isUploading}
                   fullWidth
-                  disabled={connector.status !== "Enabled" || isUploading}
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => inputRef.current?.click()}
                 >
-                  {connector.status === "Enabled" ? "Upload File" : "Coming Soon"}
+                  {c.status === "Enabled" ? "Upload File" : "Coming Soon"}
                 </Button>
               </CardContent>
             </Card>
@@ -170,42 +125,84 @@ export default function DataPlatformPage() {
         ))}
       </Grid>
 
-      <Typography variant="h6" fontWeight={700} sx={{ mt: 5, mb: 2 }}>
-        Recent Uploads
-      </Typography>
-
+      <Typography variant="h5" fontWeight={800} sx={{ mt: 5, mb: 2 }}>Recent Uploads</Typography>
       <Grid container spacing={2}>
-        {uploads.map((upload) => (
-          <Grid item xs={12} md={6} key={upload.id}>
+        {uploads.map((u) => (
+          <Grid item xs={12} md={6} key={u.id}>
             <Card>
               <CardContent>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
-                    <Typography fontWeight={700}>{upload.file_name}</Typography>
+                    <Typography fontWeight={700}>{u.file_name}</Typography>
                     <Typography color="text.secondary">
-                      {upload.dataset_type} · {formatRows(upload.row_count)} rows · {upload.uploaded_by}
+                      {u.dataset_type} · {u.row_count.toLocaleString()} rows · {u.uploaded_by}
                     </Typography>
                   </Box>
-                  <Chip
-                    label={upload.status}
-                    color={upload.status === "COMPLETED" ? "success" : "warning"}
-                  />
+                  <Chip label={u.status} color="success" />
                 </Stack>
                 <Box sx={{ mt: 2 }}>
-                  <Typography variant="caption">
-                    Validation quality: {upload.validation_score}%
-                  </Typography>
-                  <LinearProgress
-                    variant="determinate"
-                    value={upload.validation_score}
-                    sx={{ mt: 1 }}
-                  />
+                  <Typography variant="caption">Validation quality: {u.validation_score}%</Typography>
+                  <LinearProgress variant="determinate" value={u.validation_score} sx={{ mt: 1 }} />
                 </Box>
+                <Button sx={{ mt: 2 }} onClick={() => openProfile(u.id)}>View Profile</Button>
               </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
+
+      {selectedProfile && (
+        <Card sx={{ mt: 5 }}>
+          <CardContent>
+            <Typography variant="h5" fontWeight={800}>Dataset Profile: {selectedProfile.file_name}</Typography>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={6} md={2}><Metric label="Rows" value={selectedProfile.row_count.toLocaleString()} /></Grid>
+              <Grid item xs={6} md={2}><Metric label="Columns" value={selectedProfile.column_count.toString()} /></Grid>
+              <Grid item xs={6} md={2}><Metric label="Duplicates" value={selectedProfile.duplicate_rows.toString()} /></Grid>
+              <Grid item xs={6} md={2}><Metric label="Null %" value={`${selectedProfile.null_percentage}%`} /></Grid>
+              <Grid item xs={6} md={2}><Metric label="Quality" value={`${selectedProfile.quality_score}%`} /></Grid>
+              <Grid item xs={6} md={2}><Metric label="Size" value={`${Math.round(Number(selectedProfile.statistics.file_size_bytes || 0) / 1024)} KB`} /></Grid>
+            </Grid>
+            <Divider sx={{ my: 3 }} />
+            <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Column Explorer</Typography>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Column</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell align="right">Nulls</TableCell>
+                  <TableCell align="right">Distinct</TableCell>
+                  <TableCell align="right">Completeness</TableCell>
+                  <TableCell>Stats / Samples</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {selectedProfile.schema.map((col) => (
+                  <TableRow key={col.name}>
+                    <TableCell>{col.name}</TableCell>
+                    <TableCell>{col.inferred_type}</TableCell>
+                    <TableCell align="right">{col.null_percentage}%</TableCell>
+                    <TableCell align="right">{col.distinct_count}</TableCell>
+                    <TableCell align="right">{col.completeness}%</TableCell>
+                    <TableCell>{JSON.stringify(col.statistics)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </Box>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <Card variant="outlined">
+      <CardContent sx={{ textAlign: "center" }}>
+        <Typography color="text.secondary" variant="caption">{label}</Typography>
+        <Typography variant="h5" fontWeight={800}>{value}</Typography>
+      </CardContent>
+    </Card>
   );
 }
