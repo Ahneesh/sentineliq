@@ -1,11 +1,20 @@
 # Changelog
 
-## Feature Pack 3.2.1 — Enterprise Data Profiling Engine
+## v0.3.3 — Engineering Hardening
 
 ### Added
-- Polars-based CSV profiling engine.
-- `dataset_profiles` persistence model.
-- `/api/uploads/{upload_id}/profile` endpoint.
-- Dataset profile UI with overview metrics and column explorer.
-- Sample profiling dataset.
-- ADR and PDR documentation.
+- Alembic migration framework.
+- Initial migration for `uploads` and `dataset_profiles`.
+- Structured logging module.
+- Backend health and upload model tests.
+- GitHub Actions CI workflow.
+- Ruff and Black configuration.
+- Makefile for common developer commands.
+- Engineering documentation for migrations.
+
+### Changed
+- Backend configuration made environment-driven.
+- Database schema creation moved toward migration-first workflow.
+
+### Fixed
+- Prevents schema drift issues such as missing `uploads.file_name` after feature pack upgrades.

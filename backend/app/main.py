@@ -3,17 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
 from app.api.uploads import router as uploads_router
-from app.database.base import Base
-from app.database.session import engine
-from app.models.upload import DatasetProfile, Upload  # noqa: F401
+from app.core.logging import configure_logging
 
-
-Base.metadata.create_all(bind=engine)
+configure_logging()
 
 app = FastAPI(
     title="SentinelIQ API",
     description="AI-native trade surveillance platform",
-    version="0.3.2",
+    version="0.3.3",
 )
 
 app.add_middleware(

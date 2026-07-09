@@ -1,13 +1,14 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     app_name: str = "SentinelIQ"
     environment: str = "development"
     database_url: str = "postgresql://sentineliq:sentineliq@localhost:5432/sentineliq"
+    upload_storage_dir: str = "storage/uploads"
+    log_level: str = "INFO"
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()

@@ -6,6 +6,9 @@ python-dotenv
 pydantic[email]
 pydantic-settings
 python-multipart
+polars
+alembic
 pytest
 httpx
-polars
+ruff
+black

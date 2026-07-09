@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import shutil
 from pathlib import Path
 from uuid import uuid4
@@ -43,14 +42,12 @@ async def create_upload(db: Session, file: UploadFile) -> Upload:
 
     dataset_profile = DatasetProfile(
         upload_id=upload.id,
-        file_name=safe_name,
         row_count=profile["row_count"],
         column_count=profile["column_count"],
         duplicate_rows=profile["duplicate_rows"],
         null_percentage=profile["null_percentage"],
-        quality_score=profile["quality_score"],
-        schema_json=json.dumps(profile["schema"]),
-        statistics_json=json.dumps(profile["statistics"]),
+        profile_schema=profile["schema"],
+        statistics=profile["statistics"],
     )
     db.add(dataset_profile)
     db.commit()

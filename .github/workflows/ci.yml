@@ -1,0 +1,52 @@
+name: SentinelIQ CI
+
+on:
+  push:
+    branches: [main, develop, "feature/**"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sentineliq
+          POSTGRES_PASSWORD: sentineliq
+          POSTGRES_DB: sentineliq
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sentineliq"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://sentineliq:sentineliq@localhost:5432/sentineliq
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run migrations
+        run: |
+          cd backend
+          alembic upgrade head
+
+      - name: Lint
+        run: ruff check backend
+
+      - name: Test
+        run: pytest
