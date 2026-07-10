@@ -1,75 +1,199 @@
-# React + TypeScript + Vite
+# SentinelIQ Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The SentinelIQ frontend is the analyst-facing web application for the SentinelIQ trade surveillance and investigation platform.
 
-Currently, two official plugins are available:
+It is built using React, TypeScript, Vite and Material UI.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Technology Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React
+- TypeScript
+- Vite
+- Material UI
+- React Router
+- Axios
+- Apache ECharts
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Current Capabilities
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+The frontend currently includes:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Aurora visual theme;
+- application routing;
+- Data Platform page;
+- CSV connector interface;
+- upload history;
+- upload status and quality indicators;
+- dataset profile display;
+- enterprise dataset explorer;
+- pagination;
+- search;
+- column sorting;
+- current-page CSV export;
+- placeholder routes for alerts, investigations, cases and AI assistance.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
 
-```
+## Directory Structure
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+```text
+frontend/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── data-platform/
+│   │   └── layout/
+│   ├── pages/
+│   ├── services/
+│   ├── theme/
+│   ├── types/
+│   ├── App.tsx
+│   └── main.tsx
+├── eslint.config.js
+├── package.json
+├── package-lock.json
+├── tsconfig.json
+└── vite.config.ts
+Prerequisites
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Use Node.js 22 or later.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Check your version:
 
-```
+node --version
+npm --version
+Install Dependencies
+
+From the frontend directory:
+
+cd ~/Documents/sentineliq/frontend
+npm install
+Start the Development Server
+cd ~/Documents/sentineliq/frontend
+npm run dev
+
+Open:
+
+http://localhost:5173
+
+Data Platform:
+
+http://localhost:5173/data
+Backend Dependency
+
+The frontend expects the SentinelIQ FastAPI backend at:
+
+http://localhost:8000
+
+Start the backend separately:
+
+cd ~/Documents/sentineliq
+source venv/bin/activate
+docker compose up -d
+cd backend
+alembic upgrade head
+uvicorn app.main:app --reload
+Main Routes
+/                         Dashboard
+/data                     Data Platform
+/data/:id/explore         Dataset Explorer
+/alerts                   Alerts
+/investigations           Investigations
+/cases                    Cases
+/ai                       AI Investigation Assistant
+
+Some routes currently contain prototype or placeholder content.
+
+API Services
+
+Frontend API integrations are located under:
+
+src/services/
+
+The Data Platform currently calls endpoints such as:
+
+GET  /api/uploads
+POST /api/uploads
+GET  /api/uploads/{upload_id}/profile
+GET  /api/uploads/{upload_id}/preview
+Development Commands
+
+Start development server:
+
+npm run dev
+
+Run linting:
+
+npm run lint
+
+Create production build:
+
+npm run build
+
+Preview production build:
+
+npm run preview
+Clearing the Vite Cache
+
+When frontend types or API response contracts have changed, clear the Vite cache:
+
+cd ~/Documents/sentineliq/frontend
+rm -rf node_modules/.vite
+npm run dev
+
+Then hard-refresh the browser:
+
+Cmd + Shift + R
+Design Principles
+
+The SentinelIQ frontend should be:
+
+professional;
+information-dense but readable;
+explainable;
+responsive;
+accessible;
+suitable for compliance analysts;
+consistent across surveillance workflows.
+
+Semantic colours should be used consistently:
+
+Critical       Red
+High           Orange
+Medium         Amber
+Low            Blue
+Success        Green
+AI             Purple
+Neutral        Grey
+Frontend Contribution Guidelines
+
+Before committing frontend changes, run:
+
+npm run lint
+npm run build
+
+Use reusable components rather than duplicating UI logic.
+
+Avoid:
+
+hard-coded API URLs across components;
+business logic inside presentation components;
+confidential data in mock datasets;
+direct references to proprietary third-party documentation.
+Planned Frontend Features
+configurable data-quality rules;
+record-level exception explorer;
+data catalogue;
+canonical order and execution viewer;
+scenario administration;
+surveillance alert queue;
+investigation timeline;
+case management;
+trader and account profiles;
+knowledge graph;
+AI investigation assistant;
+light and dark themes.
