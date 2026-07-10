@@ -2,6 +2,7 @@ import { CssBaseline, ThemeProvider } from "@mui/material";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { auroraTheme } from "./theme/auroraTheme";
 import DataPlatformPage from "./pages/DataPlatformPage";
+import DataExplorerPage from "./pages/DataExplorerPage";
 import DashboardPage from "./pages/DashboardPage";
 import AlertsPage from "./pages/AlertsPage";
 import InvestigationPage from "./pages/InvestigationPage";
@@ -20,6 +21,7 @@ function App() {
           <Route path="/investigations" element={<InvestigationPage />} />
           <Route path="/cases" element={<CasesPage />} />
           <Route path="/data" element={<DataPlatformPage />} />
+          <Route path="/data/:uploadId/explore" element={<DataExplorerPage />} />
           <Route path="/ai" element={<AIAssistantPage />} />
         </Routes>
       </BrowserRouter>

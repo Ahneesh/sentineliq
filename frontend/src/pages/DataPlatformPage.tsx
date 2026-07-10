@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -34,6 +35,7 @@ const connectors = [
 ];
 
 export default function DataPlatformPage() {
+  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploads, setUploads] = useState<UploadRecord[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<DatasetProfile | null>(null);
@@ -144,7 +146,10 @@ export default function DataPlatformPage() {
                   <Typography variant="caption">Validation quality: {u.validation_score}%</Typography>
                   <LinearProgress variant="determinate" value={u.validation_score} sx={{ mt: 1 }} />
                 </Box>
-                <Button sx={{ mt: 2 }} onClick={() => openProfile(u.id)}>View Profile</Button>
+                <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                  <Button onClick={() => openProfile(u.id)}>View Profile</Button>
+                  <Button variant="contained" onClick={() => navigate(`/data/${u.id}/explore`)}>Explore Data</Button>
+                </Stack>
               </CardContent>
             </Card>
           </Grid>

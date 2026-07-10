@@ -23,3 +23,30 @@ export async function getDatasetProfile(uploadId: number): Promise<DatasetProfil
   const response = await api.get<DatasetProfile>(`/uploads/${uploadId}/profile`);
   return response.data;
 }
+
+export interface DatasetPreviewQuery {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortBy?: string | null;
+  sortDirection?: "asc" | "desc";
+}
+
+export async function getDatasetPreview(
+  uploadId: number,
+  query: DatasetPreviewQuery = {},
+): Promise<import("../types/dataPlatform").DatasetPreviewResponse> {
+  const response = await api.get<import("../types/dataPlatform").DatasetPreviewResponse>(
+    `/uploads/${uploadId}/preview`,
+    {
+      params: {
+        page: query.page ?? 1,
+        page_size: query.pageSize ?? 25,
+        search: query.search || undefined,
+        sort_by: query.sortBy || undefined,
+        sort_direction: query.sortDirection ?? "asc",
+      },
+    },
+  );
+  return response.data;
+}
