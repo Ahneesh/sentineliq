@@ -49,7 +49,17 @@ export default function DataPlatformPage() {
   }
 
   useEffect(() => {
-    refreshUploads().catch(() => setError("Unable to load uploads from API."));
+    let active = true;
+    void listUploads()
+      .then((data) => {
+        if (active) setUploads(data);
+      })
+      .catch(() => {
+        if (active) setError("Unable to load uploads from API.");
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function handleFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
@@ -62,9 +72,8 @@ export default function DataPlatformPage() {
       const upload = await uploadCsv(file);
       setSuccess(`${upload.file_name} uploaded, validated and profiled successfully.`);
       await refreshUploads();
-      const profile = await getDatasetProfile(upload.id);
-      setSelectedProfile(profile);
-    } catch (err) {
+      setSelectedProfile(await getDatasetProfile(upload.id));
+    } catch {
       setError("Upload failed. Check that the backend is running and the file is a valid CSV.");
     } finally {
       setIsUploading(false);
@@ -73,15 +82,22 @@ export default function DataPlatformPage() {
   }
 
   async function openProfile(uploadId: number) {
-    const profile = await getDatasetProfile(uploadId);
-    setSelectedProfile(profile);
+    try {
+      setSelectedProfile(await getDatasetProfile(uploadId));
+    } catch {
+      setError("Unable to load the dataset profile.");
+    }
   }
 
   return (
     <Box sx={{ p: 4, maxWidth: 1340, mx: "auto" }}>
-      <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems="center" spacing={2}>
-        <Box textAlign={{ xs: "center", md: "left" }}>
-          <Typography variant="h3" fontWeight={800}>Data Platform</Typography>
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        spacing={2}
+        sx={{ justifyContent: "space-between", alignItems: "center" }}
+      >
+        <Box sx={{ textAlign: { xs: "center", md: "left" } }}>
+          <Typography variant="h3" sx={{ fontWeight: 800 }}>Data Platform</Typography>
           <Typography color="text.secondary" variant="h6">
             Connect, validate, profile and catalogue trading data for surveillance.
           </Typography>
@@ -101,25 +117,25 @@ export default function DataPlatformPage() {
       <input ref={inputRef} type="file" accept=".csv" hidden onChange={handleFileSelected} />
 
       <Grid container spacing={2} sx={{ mt: 2 }}>
-        {connectors.map((c) => (
-          <Grid item xs={12} sm={6} md={4} lg={2} key={c.name}>
+        {connectors.map((connector) => (
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={connector.name}>
             <Card sx={{ height: "100%" }}>
               <CardContent>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  {c.icon}
-                  <Box flex={1}>
-                    <Typography fontWeight={700}>{c.name}</Typography>
-                    <Chip size="small" label={c.status} color={c.status === "Enabled" ? "primary" : "default"} />
+                <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                  {connector.icon}
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontWeight: 700 }}>{connector.name}</Typography>
+                    <Chip size="small" label={connector.status} color={connector.status === "Enabled" ? "primary" : "default"} />
                   </Box>
                 </Stack>
                 <Button
                   sx={{ mt: 2 }}
-                  variant={c.status === "Enabled" ? "contained" : "outlined"}
-                  disabled={c.status !== "Enabled" || isUploading}
+                  variant={connector.status === "Enabled" ? "contained" : "outlined"}
+                  disabled={connector.status !== "Enabled" || isUploading}
                   fullWidth
                   onClick={() => inputRef.current?.click()}
                 >
-                  {c.status === "Enabled" ? "Upload File" : "Coming Soon"}
+                  {connector.status === "Enabled" ? "Upload File" : "Coming Soon"}
                 </Button>
               </CardContent>
             </Card>
@@ -127,28 +143,28 @@ export default function DataPlatformPage() {
         ))}
       </Grid>
 
-      <Typography variant="h5" fontWeight={800} sx={{ mt: 5, mb: 2 }}>Recent Uploads</Typography>
+      <Typography variant="h5" sx={{ mt: 5, mb: 2, fontWeight: 800 }}>Recent Uploads</Typography>
       <Grid container spacing={2}>
-        {uploads.map((u) => (
-          <Grid item xs={12} md={6} key={u.id}>
+        {uploads.map((upload) => (
+          <Grid size={{ xs: 12, md: 6 }} key={upload.id}>
             <Card>
               <CardContent>
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
                   <Box>
-                    <Typography fontWeight={700}>{u.file_name}</Typography>
+                    <Typography sx={{ fontWeight: 700 }}>{upload.file_name}</Typography>
                     <Typography color="text.secondary">
-                      {u.dataset_type} · {u.row_count.toLocaleString()} rows · {u.uploaded_by}
+                      {upload.dataset_type} · {upload.row_count.toLocaleString()} rows · {upload.uploaded_by}
                     </Typography>
                   </Box>
-                  <Chip label={u.status} color="success" />
+                  <Chip label={upload.status} color="success" />
                 </Stack>
                 <Box sx={{ mt: 2 }}>
-                  <Typography variant="caption">Validation quality: {u.validation_score}%</Typography>
-                  <LinearProgress variant="determinate" value={u.validation_score} sx={{ mt: 1 }} />
+                  <Typography variant="caption">Validation quality: {upload.validation_score}%</Typography>
+                  <LinearProgress variant="determinate" value={upload.validation_score} sx={{ mt: 1 }} />
                 </Box>
                 <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                  <Button onClick={() => openProfile(u.id)}>View Profile</Button>
-                  <Button variant="contained" onClick={() => navigate(`/data/${u.id}/explore`)}>Explore Data</Button>
+                  <Button onClick={() => void openProfile(upload.id)}>View Profile</Button>
+                  <Button variant="contained" onClick={() => navigate(`/data/${upload.id}/explore`)}>Explore Data</Button>
                 </Stack>
               </CardContent>
             </Card>
@@ -159,37 +175,32 @@ export default function DataPlatformPage() {
       {selectedProfile && (
         <Card sx={{ mt: 5 }}>
           <CardContent>
-            <Typography variant="h5" fontWeight={800}>Dataset Profile: {selectedProfile.file_name}</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800 }}>
+              Dataset Profile: {selectedProfile.file_name ?? `Upload ${selectedProfile.upload_id}`}
+            </Typography>
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={6} md={2}><Metric label="Rows" value={selectedProfile.row_count.toLocaleString()} /></Grid>
-              <Grid item xs={6} md={2}><Metric label="Columns" value={selectedProfile.column_count.toString()} /></Grid>
-              <Grid item xs={6} md={2}><Metric label="Duplicates" value={selectedProfile.duplicate_rows.toString()} /></Grid>
-              <Grid item xs={6} md={2}><Metric label="Null %" value={`${selectedProfile.null_percentage}%`} /></Grid>
-              <Grid item xs={6} md={2}><Metric label="Quality" value={`${selectedProfile.quality_score}%`} /></Grid>
-              <Grid item xs={6} md={2}><Metric label="Size" value={`${Math.round(Number(selectedProfile.statistics.file_size_bytes || 0) / 1024)} KB`} /></Grid>
+              <Grid size={{ xs: 6, md: 2 }}><Metric label="Rows" value={selectedProfile.row_count.toLocaleString()} /></Grid>
+              <Grid size={{ xs: 6, md: 2 }}><Metric label="Columns" value={selectedProfile.column_count.toString()} /></Grid>
+              <Grid size={{ xs: 6, md: 2 }}><Metric label="Duplicates" value={selectedProfile.duplicate_rows.toString()} /></Grid>
+              <Grid size={{ xs: 6, md: 2 }}><Metric label="Null %" value={`${selectedProfile.null_percentage}%`} /></Grid>
+              <Grid size={{ xs: 6, md: 2 }}><Metric label="Quality" value={`${selectedProfile.quality_score ?? 0}%`} /></Grid>
+              <Grid size={{ xs: 6, md: 2 }}><Metric label="Size" value={`${Math.round(Number(selectedProfile.statistics.file_size_bytes || 0) / 1024)} KB`} /></Grid>
             </Grid>
             <Divider sx={{ my: 3 }} />
-            <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Column Explorer</Typography>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Column Explorer</Typography>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Column</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell align="right">Nulls</TableCell>
-                  <TableCell align="right">Distinct</TableCell>
-                  <TableCell align="right">Completeness</TableCell>
-                  <TableCell>Stats / Samples</TableCell>
+                  <TableCell>Column</TableCell><TableCell>Type</TableCell><TableCell align="right">Nulls</TableCell>
+                  <TableCell align="right">Distinct</TableCell><TableCell align="right">Completeness</TableCell><TableCell>Stats / Samples</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {selectedProfile.schema.map((col) => (
-                  <TableRow key={col.name}>
-                    <TableCell>{col.name}</TableCell>
-                    <TableCell>{col.inferred_type}</TableCell>
-                    <TableCell align="right">{col.null_percentage}%</TableCell>
-                    <TableCell align="right">{col.distinct_count}</TableCell>
-                    <TableCell align="right">{col.completeness}%</TableCell>
-                    <TableCell>{JSON.stringify(col.statistics)}</TableCell>
+                {selectedProfile.schema.map((column) => (
+                  <TableRow key={column.name}>
+                    <TableCell>{column.name}</TableCell><TableCell>{column.inferred_type}</TableCell>
+                    <TableCell align="right">{column.null_percentage}%</TableCell><TableCell align="right">{column.distinct_count}</TableCell>
+                    <TableCell align="right">{column.completeness}%</TableCell><TableCell>{JSON.stringify(column.statistics)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -206,7 +217,7 @@ function Metric({ label, value }: { label: string; value: string }) {
     <Card variant="outlined">
       <CardContent sx={{ textAlign: "center" }}>
         <Typography color="text.secondary" variant="caption">{label}</Typography>
-        <Typography variant="h5" fontWeight={800}>{value}</Typography>
+        <Typography variant="h5" sx={{ fontWeight: 800 }}>{value}</Typography>
       </CardContent>
     </Card>
   );
