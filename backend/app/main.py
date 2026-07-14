@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
+from app.api.scenarios import router as scenarios_router
 from app.api.uploads import router as uploads_router
 from app.core.logging import configure_logging
 
@@ -10,7 +11,7 @@ configure_logging()
 app = FastAPI(
     title="SentinelIQ API",
     description="AI-native trade surveillance platform",
-    version="0.3.3",
+    version="0.4.0",
 )
 
 app.add_middleware(
@@ -23,3 +24,4 @@ app.add_middleware(
 
 app.include_router(health_router, prefix="/api")
 app.include_router(uploads_router, prefix="/api")
+app.include_router(scenarios_router, prefix="/api")

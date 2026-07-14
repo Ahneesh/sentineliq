@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
 from app.database.base import Base
+from app.models.scenario import Scenario, ScenarioAudit, ScenarioDatasetRequirement, ScenarioParameter  # noqa: F401
 from app.models.upload import DatasetProfile, Upload  # noqa: F401
 
 config = context.config
